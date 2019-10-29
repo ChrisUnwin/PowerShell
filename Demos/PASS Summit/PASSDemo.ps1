@@ -63,9 +63,9 @@ $restoredDatabaseName = 'DMDatabase_Azure'
 & $fileExe /a:Import /sf:$bacpacname /tdn:$restoredDatabaseName /tsn:"PSE-LT-CHRISU\WIN2019"
 
 
-##################################################################################################
-# Let's carry out a scan to see if there are any fields we may have missed in our Classification #
-##################################################################################################
+#############################################################################################################
+# Optional:  Let's carry out a scan to see if there are any fields we may have missed in our Classification #
+#############################################################################################################
 
 # Check for PII with dbatools PII Scan - Have we missed anything?
 $ServName = "PSE-LT-CHRISU\WIN2019"
@@ -84,12 +84,34 @@ $DbName = "DMDatabase_Azure"
 $Path = "C:\Temp\DMMask\"
 New-DbaDbMaskingConfig -SqlInstance $ServName -Database $DbName -Path $Path
 
+# Rename the masking file to something more friendly
+Rename-Item -Path 'C:\Temp\DMMask\PSE-LT-CHRISU$WIN2019.DMDatabase_Azure.DataMaskingConfig.json' -NewName "DMDatabase_Azure.DataMaskingConfig.json"
+
+# Now reduce this to only what we care about - what has been classified
+$classificationJsonFileName = "C:\Temp\DMMask\Classification.json" #replace text with classificaiton json file name
+$maskingJsonFileName = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json" #replace text with masking json file name
+$classificationJson = Get-Content $classificationJsonFileName | ConvertFrom-Json
+$maskingJson = Get-Content $maskingJsonFileName | ConvertFrom-Json
+
+foreach($table in $maskingJson.Tables) {
+    foreach($column in $table.Columns) {
+        foreach($classification in $classificationJson) {
+            if($classification.Column -Eq $column.Name -And $classification.Table -Eq $table.Name -And $classification.Schema -Eq $table.Schema ){
+                Write-Host "$($table.Schema).$($table.Name).$($column.Name)"
+            }
+        }
+    }
+}
+
 # Test the masking file - will it run?
-$MaskingFile = 'C:\Temp\DMMask\PSE-LT-CHRISU$WIN2019.DMDatabase_Azure.DataMaskingConfig.json'
-Test-DbaDbDataMaskingConfig -FilePath $MaskingFile
+$MaskingFile = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json"
+Test-DbaDbDataMaskingConfig -FilePath $MaskingFile 
 
 # Now we can run the masking
-# CODE GOES HERE
+$ServName = "PSE-LT-CHRISU\WIN2019"
+$DbName = "DMDatabase_Azure"
+$MaskingFile = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json"
+Invoke-DbaDbDataMasking -SqlInstance $ServName -Database $DbName -FilePath $MaskingFile
 
 #########################################################################################
 # Once the masking is complete we can then Clone this to any developer who needs a copy #
