@@ -1,3 +1,9 @@
+# Demo PowerShell Script for PASS Summit Demo
+# Author: Chris Unwin - Redgate Software - chris.unwin@red-gate.com
+# Last Modified Date: 29/10/2019 
+# Pre-requisites: Modules: Az (https://www.powershellgallery.com/packages/Az/), dbatools (https://dbatools.io/)
+
+
 ###################################################################################
 # Before we download this out let's make sure we have our classifications to hand #
 ###################################################################################
@@ -82,3 +88,15 @@ New-DbaDbMaskingConfig -SqlInstance $ServName -Database $DbName -Path $Path
 $MaskingFile = 'C:\Temp\DMMask\PSE-LT-CHRISU$WIN2019.DMDatabase_Azure.DataMaskingConfig.json'
 Test-DbaDbDataMaskingConfig -FilePath $MaskingFile
 
+# Now we can run the masking
+# CODE GOES HERE
+
+#########################################################################################
+# Once the masking is complete we can then Clone this to any developer who needs a copy #
+#########################################################################################
+
+# Create a masked Image from our example database
+# CODE GOES HERE
+
+# Create Clones onto Instance
+# CODE GOES HERE
