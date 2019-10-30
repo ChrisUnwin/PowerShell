@@ -54,7 +54,7 @@ $StorageContext = New-AzStorageContext -StorageAccountName "dmstoragechris" -Sto
 Get-AzStorageBlobContent -Container "dmblobstore" -Blob $BacPacBlob -Context $StorageContext -Destination "C:\Users\chris.unwin\Documents\BACPACs"
 
 # Check for existance of Imported BacPac and remove if exists
-#Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "DROP DATABASE IF EXISTS DMDatabase_Azure;"
+Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE master; ALTER DATABASE DMDatabase_Azure SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE DMDatabase_Azure ;"
 
 # Import BacPac file as data tier application
 $fileExe = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\Microsoft\SQLDB\DAC\150\sqlpackage.exe"
@@ -133,16 +133,15 @@ $DbName = "DMDatabase_Azure"
 $MaskingFile = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json"
 Invoke-DbaDbDataMasking -SqlInstance $ServName -Database $DbName -FilePath $MaskingFile -Confirm:$false
 
+# Finally restore the ref integrity as well
+Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE DMDatabase_Azure ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_firstname = cus.customer_firstname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id" 
+Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE DMDatabase_Azure ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_lastname = cus.customer_lastname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id"
+
 #########################################################################################
 # Once the masking is complete we can then Clone this to any developer who needs a copy #
 #########################################################################################
 
-# Create a clone of the masked DB schema
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
-Invoke-DbaDbClone -SqlInstance $ServName -Database $DbName -CloneDatabase "MyClone"
-
-# Or backup & Restore - clean the path first
+# Backup & Restore - clean the path first
 $ServName = "PSE-LT-CHRISU\WIN2019"
 $DbName = "DMDatabase_Azure"
 $Path = "C:\Temp\DMMask\Backups"
@@ -150,4 +149,12 @@ Remove-Item $Path\*.*
 Start-Sleep -Seconds 3
 Backup-DbaDatabase -SqlInstance $ServName -Database $DbName -Type Full -Path $Path 
 Start-Sleep -Seconds 10
-Restore-DbaDatabase -SqlInstance $ServName -Path $Path -DatabaseName "MyCopiedDatabase" -DestinationDataDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.mdf" -DestinationLogDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.ldf" 
+Restore-DbaDatabase -SqlInstance $ServName `
+-Path $Path -DatabaseName "MyCopiedDatabase" `
+-DestinationDataDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.mdf" `
+-DestinationLogDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.ldf" 
+
+# Or create a clone of the masked DB schema with same statistics
+$ServName = "PSE-LT-CHRISU\WIN2019"
+$DbName = "DMDatabase_Azure"
+Invoke-DbaDbClone -SqlInstance $ServName -Database $DbName -CloneDatabase "MyClone"
