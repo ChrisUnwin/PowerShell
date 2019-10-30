@@ -85,8 +85,10 @@ $Path = "C:\Temp\DMMask\"
 New-DbaDbMaskingConfig -SqlInstance $ServName -Database $DbName -Path $Path
 
 # Delete old copies then rename the masking file to something more friendly
-Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json" | Wait-Process
-Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json" | Wait-Process
+Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json" 
+Start-Sleep -Seconds 2
+Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json" 
+Start-Sleep -Seconds 2
 Rename-Item -Path 'C:\Temp\DMMask\PSE-LT-CHRISU$WIN2019.DMDatabase_Azure.DataMaskingConfig.json' -NewName "DMDatabase_Azure.DataMaskingConfig.json"
 
 # Now reduce this to only what we care about - what has been classified
@@ -135,8 +137,17 @@ Invoke-DbaDbDataMasking -SqlInstance $ServName -Database $DbName -FilePath $Mask
 # Once the masking is complete we can then Clone this to any developer who needs a copy #
 #########################################################################################
 
-# Create a masked Image from our example database
-# CODE GOES HERE
+# Create a clone of the masked DB schema
+$ServName = "PSE-LT-CHRISU\WIN2019"
+$DbName = "DMDatabase_Azure"
+Invoke-DbaDbClone -SqlInstance $ServName -Database $DbName -CloneDatabase "MyClone"
 
-# Create Clones onto Instance
-# CODE GOES HERE
+# Or backup & Restore - clean the path first
+$ServName = "PSE-LT-CHRISU\WIN2019"
+$DbName = "DMDatabase_Azure"
+$Path = "C:\Temp\DMMask\Backups"
+Remove-Item $Path\*.* 
+Start-Sleep -Seconds 3
+Backup-DbaDatabase -SqlInstance $ServName -Database $DbName -Type Full -Path $Path 
+Start-Sleep -Seconds 10
+Restore-DbaDatabase -SqlInstance $ServName -Path $Path -DatabaseName "MyCopiedDatabase" -DestinationDataDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.mdf" -DestinationLogDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.ldf" 
