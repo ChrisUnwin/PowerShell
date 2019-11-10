@@ -10,11 +10,11 @@
 
 # Get Classification information from Azure DB
 Connect-AzAccount 
-Set-AzContext -SubscriptionID "a36be632-e20c-48fd-8af0-ba5b2c623951"
-$ServerName = "dmproduction"
-$DatabaseName = "DMDatabase_Production"
-$Path = "C:\Temp\DMMask\Classification.json"
-Get-AzSqlDatabaseSensitivityClassification -ResourceGroupName "DMDb" -ServerName $ServerName -DatabaseName $DatabaseName | ConvertTo-Json | Set-Content $Path
+Set-AzContext -SubscriptionID "Your Subscription"
+$ServerName = "your server name"
+$DatabaseName = "your azure sql db"
+$Path = "C:\Temp\Classification.json"
+Get-AzSqlDatabaseSensitivityClassification -ResourceGroupName "resource group" -ServerName $ServerName -DatabaseName $DatabaseName | ConvertTo-Json | Set-Content $Path
 
 
 ##############################################################################
@@ -22,15 +22,15 @@ Get-AzSqlDatabaseSensitivityClassification -ResourceGroupName "DMDb" -ServerName
 ##############################################################################
 
 # Start export of SQL DB
-$AzureUser = "chris.unwin"
-$ServerName = "dmproduction"
-$StorageURI = "https://dmstoragechris.blob.core.windows.net/dmblobstore/DMDatabase_Production"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
-$ExportRequest = New-AzSqlDatabaseExport -DatabaseName "DMDatabase_Production" `
+$AzureUser = "username"
+$ServerName = "servername"
+$StorageURI = "Your storage URI"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
+$ExportRequest = New-AzSqlDatabaseExport -DatabaseName "azure sql db name" `
 -ServerName $ServerName `
 -StorageKeyType "storageaccesskey" `
--StorageKey "LdkmJkNntY+c4Mu2++He2D//QavZFL7b0I50tkJYsESujoGpXhNpF2eRoHNc3ZoW9iRS5QIYlfa2oBrKQiFBgQ==" `
+-StorageKey "your storage key" `
 -StorageUri $StorageURI `
--ResourceGroupName "DMDb" `
+-ResourceGroupName "your resource group" `
 -AdministratorLogin $AzureUser
 
 # Wait for export to complete
@@ -47,20 +47,17 @@ $ExportStatus
 
 # Download the bacpac file
 Connect-AzAccount
-Set-AzContext -SubscriptionID "a36be632-e20c-48fd-8af0-ba5b2c623951"
+Set-AzContext -SubscriptionID "your sub id"
 Write-Output "Downloading bacpac file"
-$BacPacBlob = "DMDatabase_Production"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
-$StorageContext = New-AzStorageContext -StorageAccountName "dmstoragechris" -StorageAccountKey "LdkmJkNntY+c4Mu2++He2D//QavZFL7b0I50tkJYsESujoGpXhNpF2eRoHNc3ZoW9iRS5QIYlfa2oBrKQiFBgQ=="
-Get-AzStorageBlobContent -Container "dmblobstore" -Blob $BacPacBlob -Context $StorageContext -Destination "C:\Users\chris.unwin\Documents\BACPACs"
-
-# Check for existance of Imported BacPac and remove if exists
-Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE master; ALTER DATABASE DMDatabase_Azure SET SINGLE_USER WITH ROLLBACK IMMEDIATE; DROP DATABASE DMDatabase_Azure ;"
+$BacPacBlob = "your azure sql db"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
+$StorageContext = New-AzStorageContext -StorageAccountName "storge account name" -StorageAccountKey "your storage account key"
+Get-AzStorageBlobContent -Container "your storage container" -Blob $BacPacBlob -Context $StorageContext -Destination "C:\temp"
 
 # Import BacPac file as data tier application
 $fileExe = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\Microsoft\SQLDB\DAC\150\sqlpackage.exe"
-$bacpacname = "C:\Users\chris.unwin\Documents\BACPACs\DMDatabase_Production"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
-$restoredDatabaseName = 'DMDatabase_Azure'
-& $fileExe /a:Import /sf:$bacpacname /tdn:$restoredDatabaseName /tsn:"PSE-LT-CHRISU\WIN2019"
+$bacpacname = "C:\temp\your azure sql db"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
+$restoredDatabaseName = 'Your restored db name'
+& $fileExe /a:Import /sf:$bacpacname /tdn:$restoredDatabaseName /tsn:"your local server name"
 
 
 #############################################################################################################
@@ -68,9 +65,9 @@ $restoredDatabaseName = 'DMDatabase_Azure'
 #############################################################################################################
 
 # Check for PII with dbatools PII Scan - Have we missed anything?
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
-$Path = "C:\Temp\DMMask\PII.json"
+$ServName = "your local instance"
+$DbName = "your local db name"
+$Path = "C:\Temp\PII.json"
 Invoke-DbaDbPiiScan -SqlInstance $ServName -Database $DbName | ConvertTo-Json |Set-Content $Path
 
 
@@ -79,23 +76,16 @@ Invoke-DbaDbPiiScan -SqlInstance $ServName -Database $DbName | ConvertTo-Json |S
 ##############################################################################
 
 # Setup Data Masking config with dbatools
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
-$Path = "C:\Temp\DMMask\"
+$ServName = "Your local instance"
+$DbName = "Local db copy"
+$Path = "C:\Temp\"
 New-DbaDbMaskingConfig -SqlInstance $ServName -Database $DbName -Path $Path
 
-# Delete old copies then rename the masking file to something more friendly
-Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json" 
-Start-Sleep -Seconds 2
-Remove-Item -Path "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json" 
-Start-Sleep -Seconds 2
-Rename-Item -Path 'C:\Temp\DMMask\PSE-LT-CHRISU$WIN2019.DMDatabase_Azure.DataMaskingConfig.json' -NewName "DMDatabase_Azure.DataMaskingConfig.json"
-
 # Now reduce this to only what we care about - what has been classified
-$classificationJsonFileName = "C:\Temp\DMMask\Classification.json" #replace text with classificaiton json file name
-$maskingJsonFileName = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig.json" #replace text with masking json file name
+$classificationJsonFileName = "C:\Temp\Classification.json" #replace text with classificaiton json file name
+$maskingJsonFileName = "C:\Temp\DMDatabase_Azure.DataMaskingConfig.json" #replace text with masking json file name
 $newMaskingJsonFileName = "DMDatabase_Azure.DataMaskingConfig_Filtered.json" #replace text with TARGET masking json file name
-$newMaskingJsonFilePath = "C:\Temp\DMMask\$($newMaskingJsonFileName)"
+$newMaskingJsonFilePath = "C:\Temp\$($newMaskingJsonFileName)"
 $classificationJson = Get-Content $classificationJsonFileName | ConvertFrom-Json
 
 $maskingJson = Get-Content $maskingJsonFileName | ConvertFrom-Json
@@ -124,27 +114,27 @@ foreach($table in $maskingJson.Tables) {
 $maskingJson | ConvertTo-Json -depth 100 | Out-File $newMaskingJsonFilePath
 
 # Test the masking file - will it run?
-$MaskingFile = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json"
+$MaskingFile = "C:\Temp\DMDatabase_Azure.DataMaskingConfig_Filtered.json"
 Test-DbaDbDataMaskingConfig -FilePath $MaskingFile 
 
 # Now we can run the masking
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
-$MaskingFile = "C:\Temp\DMMask\DMDatabase_Azure.DataMaskingConfig_Filtered.json"
+$ServName = "Your local instance"
+$DbName = "Your local db name"
+$MaskingFile = "C:\Temp\DMDatabase_Azure.DataMaskingConfig_Filtered.json"
 Invoke-DbaDbDataMasking -SqlInstance $ServName -Database $DbName -FilePath $MaskingFile -Confirm:$false
 
-# Finally restore the ref integrity as well
-Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE DMDatabase_Azure ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_firstname = cus.customer_firstname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id" 
-Invoke-DbaQuery -SqlInstance "PSE-LT-CHRISU\WIN2019" -Query "USE DMDatabase_Azure ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_lastname = cus.customer_lastname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id"
+# Finally restore the ref integrity as well - fan masking out to dependent tables
+Invoke-DbaQuery -SqlInstance "Your local instance" -Query "USE Your restored db ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_firstname = cus.customer_firstname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id" 
+Invoke-DbaQuery -SqlInstance "Your local instance" -Query "USE your restored db ; UPDATE dbo.DM_CUSTOMER_NOTES SET customer_lastname = cus.customer_lastname FROM dbo.DM_CUSTOMER cus WHERE cus.customer_id = DM_Customer_Notes.customer_id"
 
 #########################################################################################
 # Once the masking is complete we can then Clone this to any developer who needs a copy #
 #########################################################################################
 
 # Backup & Restore - clean the path first
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
-$Path = "C:\Temp\DMMask\Backups"
+$ServName = "Your local instance"
+$DbName = "Your local db"
+$Path = "C:\Temp\Backups"
 Remove-Item $Path\*.* 
 Start-Sleep -Seconds 3
 Backup-DbaDatabase -SqlInstance $ServName -Database $DbName -Type Full -Path $Path 
@@ -155,6 +145,6 @@ Restore-DbaDatabase -SqlInstance $ServName `
 -DestinationLogDirectory "C:\Program Files\Microsoft SQL Server\MSSQL15.WIN2019\MSSQL\DATA\DMDatabase_Azure_Copy.ldf" 
 
 # Or create a clone of the masked DB schema with same statistics
-$ServName = "PSE-LT-CHRISU\WIN2019"
-$DbName = "DMDatabase_Azure"
+$ServName = "Your local instance"
+$DbName = "Your local db"
 Invoke-DbaDbClone -SqlInstance $ServName -Database $DbName -CloneDatabase "MyClone"
