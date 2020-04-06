@@ -1,5 +1,5 @@
 Connect-AzAccount 
-Set-AzContext -SubscriptionId 'a36be632-e20c-48fd-8af0-ba5b2c623951'
+Set-AzContext -SubscriptionId 'Sub-ID'
 $ResourceGroupName = 'DMDb'
 $SourceHopServer = 'dmproduction'
 $TargetServer = 'dmnonproduction'
