@@ -8,7 +8,7 @@ $StorageKey = "XMMRlrVR1FzQGwvpA9FTHAUYQihgWles7sE3vjk9ZF0i3s+0WoeHlDHQX04HhvVBl
 $StorageContainer = 'bacpacs'
 $AdminLogin = "Chris.Unwin"
 $BacPacBlob = "DMDatabase_"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
-$LocalSQLServer = "PSE-LT-CHRISU"
+$LocalSQLServer = "PSE-LT-CHRISU\WIN2019"
 $restoredDatabaseName = 'DMDatabase_Temp_Restore'
 
 #Connect to Azure Account and set subscription context
@@ -45,3 +45,5 @@ Get-AzStorageBlobContent -Container $StorageContainer -Blob $BacPacBlob -Context
 $fileExe = "C:\Program Files (x86)\Microsoft Visual Studio\2019\Enterprise\Common7\IDE\Extensions\Microsoft\SQLDB\DAC\150\sqlpackage.exe"
 $bacpacname = "C:\temp\BACPACS\"+ $BacPacBlob 
 & $fileExe /a:Import /sf:$bacpacname /tdn:$restoredDatabaseName /tsn:$LocalSQLServer
+
+#Mask and Provision the copy
