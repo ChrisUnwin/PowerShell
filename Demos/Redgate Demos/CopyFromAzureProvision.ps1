@@ -4,7 +4,7 @@ $ServerName = 'dmproduction'
 $DBName = 'DMDatabase_Production' 
 $StorageAccount = 'dmstoragechris'
 $StorageURI = "https://dmstoragechris.blob.core.windows.net/bacpacs/DMDatabase_"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
-$StorageKey = "XMMRlrVR1FzQGwvpA9FTHAUYQihgWles7sE3vjk9ZF0i3s+0WoeHlDHQX04HhvVBl/AI2sooCHG5L1bzEyhZwQ=="
+$StorageKey = "[REDACTED FOR SECURITY]"
 $StorageContainer = 'bacpacs'
 $AdminLogin = "Chris.Unwin"
 $BacPacBlob = "DMDatabase_"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
@@ -17,9 +17,12 @@ $ImagePath = 'C:\Temp\Images'
 $ImageName = 'DMDatabase_Production'
 $MaskingScriptLocation = 'C:\Users\chris.unwin\Documents\Data Masker(SqlServer)\Masking Sets\AzureMaskingFun.DMSMaskSet'
 
+# Set names for developers to receive Clones
+$Devs = @("Dev_Chris", "Dev_Kendra", "Dev_Andreea")
+
 #Connect to Azure Account and set subscription context
 Connect-AzAccount 
-Set-AzContext -SubscriptionId 'a36be632-e20c-48fd-8af0-ba5b2c623951'
+Set-AzContext -SubscriptionId '[REDACTED FOR SECURITY]'
 
 # Start export of SQL DB
 $ExportRequest = New-AzSqlDatabaseExport -DatabaseName $DBName `
@@ -68,13 +71,10 @@ New-SqlCloneImage -Name $ImageName -SqlServerInstance $SqlServerInstance -Databa
 
 $DevImage = Get-SqlCloneImage -Name $ImageName
 
-# Set names for developers to receive Clones
-$Devs = @("Dev_Chris", "Dev_Kendra", "Dev_Andreea")
-
 # Create New Clones for Devs
 $Devs| ForEach-Object { # note - '{' needs to be on same line as 'foreach' !
    $DevImage | New-SqlClone -Name "DMDatabase_$_" -Location $SqlServerInstance 
 };
 
 #Drop the Temp Copy
-Invoke-DbaQuery -SqlInstance $LocalSqlServer -Query "DROP DATABASE $BacPacBlob; GO" 
+Invoke-Sqlcmd -SqlInstance $LocalSqlServer -Query "DROP DATABASE $BacPacBlob;" 
