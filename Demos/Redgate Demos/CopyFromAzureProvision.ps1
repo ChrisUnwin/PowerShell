@@ -10,6 +10,12 @@ $AdminLogin = "Chris.Unwin"
 $BacPacBlob = "DMDatabase_"+ [datetime]::Today.ToString('yyyy-MM-dd') +".bacpac"
 $LocalSQLServer = "PSE-LT-CHRISU\WIN2019"
 $restoredDatabaseName = 'DMDatabase_Temp_Restore'
+$SQLCloneServer = 'http://PSE-LT-CHRISU:14145'
+$CurrentMachine = 'PSE-LT-CHRISU'
+$InstanceName = 'WIN2019'
+$ImagePath = 'C:\Temp\Images'
+$ImageName = 'DMDatabase_Production'
+$MaskingScriptLocation = 'C:\Users\chris.unwin\Documents\Data Masker(SqlServer)\Masking Sets\AzureMaskingFun.DMSMaskSet'
 
 #Connect to Azure Account and set subscription context
 Connect-AzAccount 
@@ -47,3 +53,28 @@ $bacpacname = "C:\temp\BACPACS\"+ $BacPacBlob
 & $fileExe /a:Import /sf:$bacpacname /tdn:$restoredDatabaseName /tsn:$LocalSQLServer
 
 #Mask and Provision the copy
+# Connect to SQL Clone Server
+Connect-SqlClone -ServerUrl $SQLCloneServer
+
+# Set variables for Image and Clone Location
+$SqlServerInstance = Get-SqlCloneSqlServerInstance -MachineName $CurrentMachine -InstanceName $InstanceName
+$ImageDestination = Get-SqlCloneImageLocation -Path $ImagePath
+$MaskingScript = New-SqlCloneMask -Path $MaskingScriptLocation
+
+# Create New Masked Image from Clone
+New-SqlCloneImage -Name $ImageName -SqlServerInstance $SqlServerInstance -DatabaseName $restoredDatabaseName `
+-Modifications @($MaskingScript) `
+-Destination $ImageDestination | Wait-SqlCloneOperation
+
+$DevImage = Get-SqlCloneImage -Name $ImageName
+
+# Set names for developers to receive Clones
+$Devs = @("Dev_Chris", "Dev_Kendra", "Dev_Andreea")
+
+# Create New Clones for Devs
+$Devs| ForEach-Object { # note - '{' needs to be on same line as 'foreach' !
+   $DevImage | New-SqlClone -Name "DMDatabase_$_" -Location $SqlServerInstance 
+};
+
+#Drop the Temp Copy
+Invoke-DbaQuery -SqlInstance $LocalSqlServer -Query "DROP DATABASE $BacPacBlob; GO" 
