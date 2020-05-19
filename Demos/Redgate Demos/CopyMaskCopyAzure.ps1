@@ -18,7 +18,7 @@ New-AzSqlDatabaseCopy -ResourceGroupName $ResourceGroupName -ServerName $SourceH
 Start-Sleep -Seconds 300
 
 #Invoke Data Masker on local machine to mask the temp copy
-& "C:\Program Files\Red Gate\Data Masker for SQL Server 7\DataMaskerCmdLine.exe" PARFILE="C:\Users\chris.unwin\Documents\Data Masker(SqlServer)\Masking Sets\AzureFun.DMSMaskSet"
+& "C:\Program Files\Red Gate\Data Masker for SQL Server 7\DataMaskerCmdLine.exe" PARFILE="C:\Users\chris.unwin\Documents\Data Masker(SqlServer)\Masking Sets\AzureFun.PARFILE"
 
 #Wait for masking to complete
 Start-Sleep -Seconds 300
