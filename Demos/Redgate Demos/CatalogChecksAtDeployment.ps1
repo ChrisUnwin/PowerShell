@@ -1,7 +1,7 @@
 ############## Change Anything Below Here #####################
 
 # Data Catalog Connection Variables
-$authToken = $DataCatalogAuthToken
+$authToken = $env:DataCatalogAuthToken
 $serverUrl = $env:DataCatalogUrl #In the format 
 $WebRequestURI = "$($serverUrl)/powershell"
 $SourceInstanceName = $env:StageInstance #Fully Qualified Instance Name
