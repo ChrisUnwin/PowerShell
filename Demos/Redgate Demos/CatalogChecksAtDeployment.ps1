@@ -1,15 +1,19 @@
+############## Change Anything Below Here #####################
+
 # Data Catalog Connection Variables
-$authToken = "NzIwODk5NDkyMDg1MjM1NzEyOjE5NGJhNDA1LWM0ODctNGVmOS1iMGZkLTMxOTAzNzliZjdjZA=="
-$serverUrl = "http://pse-lt-chrisu:15156"
-$WebRequestURI = "http://pse-lt-chrisu:15156/powershell"
-$SourceInstanceName = 'PSE-LT-CHRISU\'
-$TargetInstanceName = 'PSE-LT-CHRISU\'
-$SourceDatabaseName = 'VoiceOfTheDBA_Acceptance'
-$TargetdatabaseName = 'VoiceOfTheDBA_Production'
+$authToken = $DataCatalogAuthToken
+$serverUrl = $env:DataCatalogUrl #In the format 
+$WebRequestURI = "$($serverUrl)/powershell"
+$SourceInstanceName = $env:StageInstance #Fully Qualified Instance Name
+$TargetInstanceName = $env:ProdInstance #Fully Qualified Instance Name
+$SourceDatabaseName = $env:StageDB #DatabaseName
+$TargetdatabaseName = $env:ProdDB #DatabaseName
+$DatabaseDeploymentResources = $env:DatabaseDeploymentResources
+
+############## Change Anything Above Here #####################
 
 #SQL Change Automation Release Artifact Variables
-#$JsonFile = Get-Content -Raw -Path "C:\DatabaseDeploymentResources\TFS\VoiceOfTheDBA\$env:Release.ReleaseName\Acceptance\Reports\Changes.json" | ConvertFrom-Json
-$JSONFile = Get-Content -Raw -Path "C:\Users\chris.unwin\Desktop\Changes.json" | ConvertFrom-Json
+$JsonFile = Get-Content -Raw -Path $DatabaseDeploymentResources | ConvertFrom-Json
 
 # Check for any changes and assert if they are table changes
    
