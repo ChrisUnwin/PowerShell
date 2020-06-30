@@ -1,17 +1,14 @@
 ############## Change Anything Below Here #####################
-
 # Data Catalog Connection Variables
 $authToken = $env:DataCatalogAuthToken
-$serverUrl = $env:DataCatalogUrl #In the format 
+$serverUrl = $env:DataCatalogUrl #In the format ending 15156, no forward slash
 $WebRequestURI = "$($serverUrl)/powershell"
 $SourceInstanceName = $env:StageInstance #Fully Qualified Instance Name
 $TargetInstanceName = $env:ProdInstance #Fully Qualified Instance Name
 $SourceDatabaseName = $env:StageDB #DatabaseName
 $TargetdatabaseName = $env:ProdDB #DatabaseName
-$DatabaseDeploymentResources = $env:DatabaseDeploymentResources
-
+$DatabaseDeploymentResources = $env:DatabaseDeploymentJSON
 ############## Change Anything Above Here #####################
-
 #SQL Change Automation Release Artifact Variables
 $JsonFile = Get-Content -Raw -Path $DatabaseDeploymentResources | ConvertFrom-Json
 
