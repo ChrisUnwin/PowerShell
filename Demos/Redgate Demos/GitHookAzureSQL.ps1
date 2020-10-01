@@ -31,7 +31,6 @@ Write-Verbose "Switched from branch ${fromBranch} to branch ${toBranch}"
 
 $GoldenDBName = $DBName+"_Golden"
 $ToBranchDB = $DBName+"_"+$toBranch
-$ToBranchDBtemp = $DBName+"_"+$toBranch+"_temp"
 $FromBranchDB = $DBName+"_"+$fromBranch
 $ExistingDBs = Get-AzSqlDatabase -ServerName $ServerName -ResourceGroup $ResourceGroupName
 
@@ -61,15 +60,11 @@ if ($ExistingDBs.DatabaseName -NotContains $ToBranchDB) {
 
     Write-Information "Existing database $ToBranchDB found, switching to live copy..."
 
-    Set-AzSqlDatabase -DatabaseName $DBName -NewName $ToBranchDBtemp -ServerName $ServerName -ResourceGroupName $ResourceGroupName
+    Set-AzSqlDatabase -DatabaseName $DBName -NewName $FromBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName
 
     Start-Sleep -Seconds 15
 
     Set-AzSqlDatabase -DatabaseName $ToBranchDB -NewName $DBName -ServerName $ServerName -ResourceGroupName $ResourceGroupName
-
-    Start-Sleep -Seconds 15
-
-    Set-AzSqlDatabase -DatabaseName $ToBranchDBtemp -NewName $ToBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName
 
 }
 
