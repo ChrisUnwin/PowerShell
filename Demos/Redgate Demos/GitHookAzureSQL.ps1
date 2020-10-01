@@ -26,8 +26,8 @@ if ($fromBranch -eq $toBranch) {
     return
 }
 
-Write-Information "Provisioning database ${DBName} for branch ${toBranch}..."
-Write-Verbose "Switched from branch ${fromBranch} to branch ${toBranch}"
+Write-Host "Provisioning database ${DBName} for branch ${toBranch}..."
+Write-Host "Switched from branch ${fromBranch} to branch ${toBranch}"
 
 $GoldenDBName = $DBName+"_Golden"
 $ToBranchDB = $DBName+"_"+$toBranch
@@ -36,7 +36,7 @@ $ExistingDBs = Get-AzSqlDatabase -ServerName $ServerName -ResourceGroup $Resourc
 
 if ($ExistingDBs.DatabaseName -NotContains $GoldenDBName) {
 
-    Write-Information "No golden copy found for $DBname, creating $GoldenDBName..."
+    Write-Host "No golden copy found for $DBname, creating $GoldenDBName..."
 
     New-AzSqlDatabaseCopy -ResourceGroupName $ResourceGroupName -ServerName $ServerName -DatabaseName $DBName `
     -CopyResourceGroupName $ResourceGroupName -CopyServerName $ServerName -CopyDatabaseName $GoldenDBName
@@ -45,20 +45,20 @@ if ($ExistingDBs.DatabaseName -NotContains $GoldenDBName) {
 
 if ($ExistingDBs.DatabaseName -NotContains $ToBranchDB) {
 
-    Write-Information "Existing database $ToBranchDB, provisioning new database copy..."
+    Write-Host "Existing database $FromBranchDB, provisioning new database copy..."
 
     Set-AzSqlDatabase -DatabaseName $DBName -NewName $FromBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName 
 
     Start-Sleep -Seconds 15
 
-    Write-Information "$FromBranchDB created, creating new master copy for branch $toBranch..."
+    Write-Host "$FromBranchDB created, creating new master copy for branch $toBranch..."
 
     New-AzSqlDatabaseCopy -ResourceGroupName $ResourceGroupName -ServerName $ServerName -DatabaseName $GoldenDBName `
     -CopyResourceGroupName $ResourceGroupName -CopyServerName $ServerName -CopyDatabaseName $DBName
 
 } else {
 
-    Write-Information "Existing database $ToBranchDB found, switching to live copy..."
+    Write-Host "Existing database $ToBranchDB found, switching to live copy..."
 
     Set-AzSqlDatabase -DatabaseName $DBName -NewName $FromBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName
 
