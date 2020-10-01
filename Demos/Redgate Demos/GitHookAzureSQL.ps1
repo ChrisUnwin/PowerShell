@@ -45,11 +45,9 @@ if ($ExistingDBs.DatabaseName -NotContains $GoldenDBName) {
 
 if ($ExistingDBs.DatabaseName -NotContains $ToBranchDB) {
 
-    Write-Host "Existing database $FromBranchDB, provisioning new database copy..."
+    Write-Host "$ToBranchDB not found, renaming and provisioning new database copy..."
 
     Set-AzSqlDatabase -DatabaseName $DBName -NewName $FromBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName 
-
-    Start-Sleep -Seconds 15
 
     Write-Host "$FromBranchDB created, creating new master copy for branch $toBranch..."
 
@@ -61,8 +59,6 @@ if ($ExistingDBs.DatabaseName -NotContains $ToBranchDB) {
     Write-Host "Existing database $ToBranchDB found, switching to live copy..."
 
     Set-AzSqlDatabase -DatabaseName $DBName -NewName $FromBranchDB -ServerName $ServerName -ResourceGroupName $ResourceGroupName
-
-    Start-Sleep -Seconds 15
 
     Set-AzSqlDatabase -DatabaseName $ToBranchDB -NewName $DBName -ServerName $ServerName -ResourceGroupName $ResourceGroupName
 
