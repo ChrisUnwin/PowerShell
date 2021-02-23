@@ -1,0 +1,1 @@
+& "sqlcompare" "/project:C:\SQLCompare\Projects\widgets.scp"
