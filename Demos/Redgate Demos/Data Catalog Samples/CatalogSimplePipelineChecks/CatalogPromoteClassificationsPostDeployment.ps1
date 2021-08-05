@@ -2,7 +2,7 @@
 
 $CatalogServer="" # The lcoation of your catalog server, ending on :15156 
 $authToken="" # Your Data Catalog Auth token from the Settings page
-$sourceInstanceName = ""
+$sourceInstanceName = "" 
 $targetInstanceName = ""
 $sourceDatabaseName = ""
 $targetDatabaseName = ""
