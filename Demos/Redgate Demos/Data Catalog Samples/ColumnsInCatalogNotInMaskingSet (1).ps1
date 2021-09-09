@@ -1,10 +1,11 @@
 ### CHANGE THIS ###
 
-$MaskingSet = "C:\Users\chris.unwin\Desktop\DMDBMaskSet.DMSMaskSet" # Your masking set including the DMSMaskSet file extension
-$instance = "dmnonproduction.database.windows.net" # The Instance as it is shown in Data Catalog that hosts the database
-$DatabaseName = "DMDatabase_Dev" # The DB you want classification info for
-$CatalogServer="http://pse-lt-chrisu:15156" # The lcoation of your catalog server, ending on :15156
-$authToken="ODY1NTYzNDcxMTI1Njc2MDMyOjcyZjUyNGVhLTAwMTMtNDMzNy04YjkwLWM0NTI5OTVjYmRjNA==" # Your Data Catalog Auth token from the Settings page
+$MaskingSet = "yourmaskingset.DMSMaskSet" # Your masking set including the DMSMaskSet file extension
+$instance = "yourinstance" # The Instance as it is shown in Data Catalog that hosts the database
+$DatabaseName = "yourdatabase" # The DB you want classification info for
+$CatalogServer="http://yourmachine:15156" # The lcoation of your catalog server, ending on :15156
+$authToken="redacted" # Your Data Catalog Auth token from the Settings page
+$tagName = "Static Masking" # The tag you're using to identify which columns need to be masked
 
 ### DONT CHANGE THIS ###
 
@@ -13,7 +14,7 @@ Import-Module .\data-catalog.psm1 -Force
 Connect-SqlDataCatalog -ServerUrl $CatalogServer -AuthToken $authToken 
 $ColumnsMarkedForMasking = Get-ClassificationColumn `
     -InstanceName $instance `
-    -DatabaseName $DatabaseName | Where-Object {$_.tags.name -eq "Static Masking"} 
+    -DatabaseName $DatabaseName | Where-Object {$_.tags.name -eq $tagName} 
 $MaskingSetXML = [xml](Get-Content -Path $MaskingSet)
 $subrules = $MaskingSetXML.SelectNodes('//DMSSetContainer_MaskingSet/DMSSetContainer/DMSRuleBindingList/RuleSubstitution')
 $internalrules = $MaskingSetXML.SelectNodes('//DMSSetContainer_MaskingSet/DMSSetContainer/DMSRuleBindingList/RuleRowInternal')
